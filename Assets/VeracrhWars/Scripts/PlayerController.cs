@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,6 +22,8 @@ public class PlayerController : MonoBehaviour
 
     private bool _isFiring;
     private float _fireTimer;
+    private bool _isAiming;
+    private Camera _cam;
 
     private void Awake()
     {
@@ -30,6 +33,8 @@ public class PlayerController : MonoBehaviour
 
         if (firePoint == null)
             firePoint = transform;
+
+        _cam = Camera.main;
     }
 
     public void OnMove(InputValue value) => _moveInput = value.Get<Vector2>();
@@ -63,6 +68,29 @@ public class PlayerController : MonoBehaviour
             Shoot();
             _fireTimer = 1f / fireRate;
         }
+
+        // APUNTAR CON RATÓN
+        if (_isAiming)
+        {
+            Ray ray = _cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
+            {
+                Vector3 dirAim = hit.point - transform.position;
+                dirAim.y = 0f;
+
+                if (dirAim.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion target = Quaternion.LookRotation(dirAim, Vector3.up);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, target, rotationSpeed * Time.deltaTime);
+                }
+            }
+        }
+        else if (rotateToMoveDirection && dir.sqrMagnitude > 0.0001f)
+        {
+            Quaternion target = Quaternion.LookRotation(dir, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, target, rotationSpeed * Time.deltaTime);
+        }
+
     }
 
     private void FixedUpdate()
@@ -83,5 +111,25 @@ public class PlayerController : MonoBehaviour
         Quaternion rot = firePoint.rotation;
 
         Instantiate(bulletPrefab, pos, rot);
+    }
+
+    public void OnAim(InputValue value)
+    {
+        _isAiming = value.isPressed;
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+        //Si colisiona con un enemigo, morir
+        if (other.CompareTag("Enemy"))
+        {
+            Die();
+        }
+    }
+
+    public void Die()
+    {
+        Debug.Log("Player ha muerto.");
+        Destroy(gameObject);
     }
 }
