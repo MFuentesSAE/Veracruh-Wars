@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,11 +18,10 @@ public class PlayerController : MonoBehaviour
     private Rigidbody _rb;
     private Vector2 _moveInput;
     private Vector3 _velocity;
+    private Camera camera;
 
-    private bool _isFiring;
+    private bool _isFiring, _isAiming;
     private float _fireTimer;
-    private bool _isAiming;
-    private Camera _cam;
 
     private void Awake()
     {
@@ -34,12 +32,14 @@ public class PlayerController : MonoBehaviour
         if (firePoint == null)
             firePoint = transform;
 
-        _cam = Camera.main;
+        camera = Camera.main;
     }
 
     public void OnMove(InputValue value) => _moveInput = value.Get<Vector2>();
 
     public void OnFire(InputValue value) => _isFiring = value.isPressed;
+    public void OnRightClick(InputValue value) => _isAiming = value.isPressed;
+
 
     private void Update()
     {
@@ -55,10 +55,14 @@ public class PlayerController : MonoBehaviour
 
         _velocity = dir * speed;
 
-        if (rotateToMoveDirection && dir.sqrMagnitude > 0.0001f)
+        if (_isAiming)
         {
-            Quaternion target = Quaternion.LookRotation(dir, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, target, rotationSpeed * Time.deltaTime);
+            Aim();
+        }
+
+        else if (rotateToMoveDirection && dir.sqrMagnitude > 0.0001f)
+        {
+            Rotate(dir);
         }
 
         // DISPARO
@@ -68,29 +72,6 @@ public class PlayerController : MonoBehaviour
             Shoot();
             _fireTimer = 1f / fireRate;
         }
-
-        // APUNTAR CON RATÓN
-        if (_isAiming)
-        {
-            Ray ray = _cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
-            {
-                Vector3 dirAim = hit.point - transform.position;
-                dirAim.y = 0f;
-
-                if (dirAim.sqrMagnitude > 0.0001f)
-                {
-                    Quaternion target = Quaternion.LookRotation(dirAim, Vector3.up);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, target, rotationSpeed * Time.deltaTime);
-                }
-            }
-        }
-        else if (rotateToMoveDirection && dir.sqrMagnitude > 0.0001f)
-        {
-            Quaternion target = Quaternion.LookRotation(dir, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, target, rotationSpeed * Time.deltaTime);
-        }
-
     }
 
     private void FixedUpdate()
@@ -113,23 +94,26 @@ public class PlayerController : MonoBehaviour
         Instantiate(bulletPrefab, pos, rot);
     }
 
-    public void OnAim(InputValue value)
+    private void Rotate(Vector3 rotationTarget)
     {
-        _isAiming = value.isPressed;
+        Quaternion targetRotation = Quaternion.LookRotation(rotationTarget);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
 
-    public void OnTriggerEnter(Collider other)
+    private void Aim()
     {
-        //Si colisiona con un enemigo, morir
-        if (other.CompareTag("Enemy"))
-        {
-            Die();
-        }
-    }
+        //Hacer un raycast desde la cámara hacia la pocisión del mopuse
+        Ray ray = camera.ScreenPointToRay(Mouse.current.position.value);
+        RaycastHit hit;
+        Physics.Raycast(ray.origin, ray.direction, out hit, Mathf.Infinity);
 
-    public void Die()
-    {
-        Debug.Log("Player ha muerto.");
-        Destroy(gameObject);
+        //Si el racyast golpea un punto ese será el objetivo para mirar, si no obtener el útimo punto del rayo
+        Vector3 point = hit.collider != null ? hit.point : ray.GetPoint(Mathf.Infinity);
+        Debug.DrawRay(ray.origin, ray.direction * Mathf.Infinity);
+
+        //Obtener la dirección del punto obtenido respecto al jugador, hacer el eje y 0 para que solamente rote en dicho eje.
+        Vector3 direction = point - transform.position;
+        direction.y = 0;
+        Rotate(direction);
     }
 }
