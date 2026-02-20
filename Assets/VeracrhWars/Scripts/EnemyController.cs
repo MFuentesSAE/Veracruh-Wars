@@ -165,6 +165,9 @@ public class EnemyController : MonoBehaviour
         if (_isDead) return;
         _isDead = true;
 
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnEnemyKilled(transform.position);
+
         if (WaveManager.Instance != null)
             WaveManager.Instance.UnregisterEnemy();
 

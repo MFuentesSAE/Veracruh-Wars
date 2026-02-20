@@ -15,6 +15,12 @@ public class Bullet : MonoBehaviour
         _rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
     }
 
+    public void Init(float newSpeed, float newLifeTime)
+    {
+        speed = newSpeed;
+        lifeTime = newLifeTime;
+    }
+
     private void Start()
     {
         _rb.linearVelocity = transform.forward * speed;
@@ -23,17 +29,29 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        EnemyController enemy = other.GetComponentInParent<EnemyController>();
+        if (enemy != null)
         {
-            EnemyController enemy = other.GetComponentInParent<EnemyController>();
-            if (enemy != null) enemy.Die();
-            else Destroy(other.gameObject);
+            enemy.Die();
+            Destroy(gameObject);
+            return;
+        }
 
+        if (!other.CompareTag("Player"))
             Destroy(gameObject);
-        }
-        else if (!other.CompareTag("Player"))
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        EnemyController enemy = collision.collider.GetComponentInParent<EnemyController>();
+        if (enemy != null)
         {
+            enemy.Die();
             Destroy(gameObject);
+            return;
         }
+
+        if (!collision.collider.CompareTag("Player"))
+            Destroy(gameObject);
     }
 }

@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Enemy
   - Bullet
+  - Rifle
+  - RPG
+  - FlameThrower
   layers:
   - Default
   - TransparentFX
