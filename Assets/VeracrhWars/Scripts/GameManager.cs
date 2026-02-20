@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     [Header("Progression")]
     [SerializeField] private int killsToLevel2 = 20;
     [SerializeField] private string level2SceneName = "Level2";
-    private int _kills;
+    private int _killCount = 0;
 
     [Header("Drops - Shield")]
     [SerializeField, Range(0f, 1f)] private float shieldDropChance = 0.5f;
@@ -21,7 +21,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject rpgPickupPrefab;
     [SerializeField] private GameObject flamethrowerPickupPrefab;
     [SerializeField] private GameObject riflePickupPrefab;
-    [SerializeField, Range(0f, 1f)] private float rpgWeight = 0.6f;
 
     [Header("Weapon Probabilitys")]
     [SerializeField] private float weightRifle = 0.5f; 
@@ -37,15 +36,15 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         lives = 3;
-        _kills = 0;
+        _killCount = 0;
     }
 
     public void OnEnemyKilled(Vector3 enemyPos)
     {
-        _kills++;
+        _killCount++;
 
         //cambio de nivel
-        if (_kills >= killsToLevel2)
+        if (_killCount >= killsToLevel2)
         {
             LoadLevel2();
             return;
@@ -63,6 +62,19 @@ public class GameManager : MonoBehaviour
             GameObject pick = PickWeaponDrop();
             if (pick != null)
                 Instantiate(pick, enemyPos, Quaternion.identity);
+        }
+    }
+    public void AddKill()
+    {
+        _killCount++;
+
+        Debug.Log($"Kills: {_killCount}/{killsToLevel2}");
+
+        if (_killCount >= killsToLevel2)
+        {
+            SceneManager sm = FindFirstObjectByType<SceneManager>();
+            if (sm != null) sm.LoadSceneByName(level2SceneName);
+            else UnityEngine.SceneManagement.SceneManager.LoadScene(level2SceneName);
         }
     }
 

@@ -40,18 +40,4 @@ public class Bullet : MonoBehaviour
         if (!other.CompareTag("Player"))
             Destroy(gameObject);
     }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        EnemyController enemy = collision.collider.GetComponentInParent<EnemyController>();
-        if (enemy != null)
-        {
-            enemy.Die();
-            Destroy(gameObject);
-            return;
-        }
-
-        if (!collision.collider.CompareTag("Player"))
-            Destroy(gameObject);
-    }
 }

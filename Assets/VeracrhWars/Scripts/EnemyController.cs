@@ -171,6 +171,9 @@ public class EnemyController : MonoBehaviour
         if (WaveManager.Instance != null)
             WaveManager.Instance.UnregisterEnemy();
 
+        if (GameManager.Instance != null)
+            GameManager.Instance.AddKill();
+
         Collider col = GetComponentInChildren<Collider>();
         if (col != null) col.enabled = false;
 
